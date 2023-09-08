@@ -1,14 +1,12 @@
+# Copyright (c) 2023 texer.ai. All rights reserved.
 cmake_minimum_required(VERSION 3.0)
 
-project(splat)
+project(bc)
 
-set(SRC ./source)
+# Setting compiler flags.
+set (CMAKE_CXX_COMPILER g++)
+set (CMAKE_CXX_STANDARD 14)
+set (CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} ${FLAGS})
 
-set(ALL_H
-    ${SRC}/lexer.h
-)
-
-set(ALL_CPP
-    ${SRC}/lexer.cpp
-)
-add_executable (splat ${SRC}/main.cpp ${ALL_H} ${ALL_CPP})
+# Tests.
+add_subdirectory(./tests/lexer)

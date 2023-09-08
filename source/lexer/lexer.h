@@ -5,7 +5,7 @@
 // C++ libraries.
 #include <string>
 
-namespace splat
+namespace bc
 {
     class Lexer
     {

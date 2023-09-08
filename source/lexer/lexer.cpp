@@ -3,24 +3,39 @@
 
 // C++ libraries.
 #include <algorithm>
+#include <cassert>
+#include <map>
+#include <sstream>
 #include <vector>
 
 // Local libraries.
 #include "token.h"
 
-namespace splat
+namespace bc
 {
     // Constant error messages.
     static const char* kStringErrorUndefinedTokenKind = "Error: Token value is undefined.";
+    static const char* kStringErrorFailedFormingString = "Error: Could not form string, quotes were not closed.";
 
     // Constant string vectors involved in lexing.
     static const std::vector<std::string> kTypeList = {"i32", "u32", "i64", "u64", "bool"};
     static const std::vector<std::string> kStatementTokenList = {"if", "while", "begin", "end", "program", "do", "return"};
     static const std::vector<std::string> kOpTokenList = {"and", "or", "not", ">", "<", "=", "==", ">=", "<=", "+", "-", "*", "/", "%"};
+    static const std::vector<std::string> kSpecialCharTokenList = {"(", ")", ";"};
+
+    // Constant map for token enum to string conversion.
+    static const std::map<TokenKind, const char*> kTokenKindToString = {
+        {TokenKind::kLabel, "label"},
+        {TokenKind::kNumberLiteral, "num_lit"},
+        {TokenKind::kOperator, "op"},
+        {TokenKind::kSpecialChar, "spec_char"},
+        {TokenKind::kStatement, "statement"},
+        {TokenKind::kStringLiteral, "str_lit"},
+        {TokenKind::kType, "type"}
+    };
 
     struct Lexer::LexerImpl
     {
-        std::string source;
         std::vector<Token> tokens;
     };
 
@@ -49,22 +64,63 @@ namespace splat
         return str.find(c) != std::string::npos;
     }
 
+    static bool IsOperator(char c)
+    {
+        for (const auto& op : kOpTokenList)
+        {
+            if (op.length() == 1 && op[0] == c)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static bool IsSpecialChar(char c)
+    {
+        for (const auto& special_char : kSpecialCharTokenList)
+        {
+            if (special_char[0] == c)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     static TokenKind GetTokenKind(const std::string& token_value)
     {
         bool is_statement_token = std::find(kStatementTokenList.begin(), kStatementTokenList.end(), token_value) != std::end(kStatementTokenList);
         bool is_operator_token = std::find(kOpTokenList.begin(), kOpTokenList.end(), token_value) != std::end(kOpTokenList);
 
-        if (is_statement_token)
+        if (token_value.length() > 0)
         {
-            return TokenKind::kStatement;
-        }
-        else if (is_operator_token)
-        {
-            return TokenKind::kOperator;
-        }
-        else if (token_value.length() == 1 && CharInString(token_value[0], "()"))
-        {
-            return TokenKind::kSpecialChar;
+            if (is_statement_token)
+            {
+                return TokenKind::kStatement;
+            }
+            else if (is_operator_token)
+            {
+                return TokenKind::kOperator;
+            }
+            else if (token_value.length() == 1 && CharInString(token_value[0], "();"))
+            {
+                return TokenKind::kSpecialChar;
+            }
+            else if (token_value.length() > 1 && token_value[0] == '"' && token_value[token_value.length() - 1] == '"')
+            {
+                return TokenKind::kStringLiteral;
+            }
+            else if (IsNumber(token_value[0]))
+            {
+                auto alpha_iter = std::find_if(token_value.begin(), token_value.end(), [&](const char& c) {
+                    return IsAlpha(c);
+                });
+                if (alpha_iter == token_value.end())
+                {
+                    return TokenKind::kNumberLiteral;
+                }
+            }
         }
 
         return TokenKind::kUndefined;
@@ -91,9 +147,12 @@ namespace splat
                 {
                 case LexState::kInit:
                 {
+                    // Reset token value.
+                    token_val = "";
+
+                    // Determine how the value should be formed based on the first char.
                     if (IsAlpha(c) || IsNumber(c))
                     {
-                        token_val = c;
                         state = LexState::kFormValue;
                     }
                     else if (c == '"')
@@ -102,9 +161,25 @@ namespace splat
                     }
                     else if (c == '=' || c == '>' || c == '<')
                     {
+                        token_val = c;
                         state = LexState::kFormTwoCharOperator;
+                        should_get_next_c = true;
                     }
-                    should_get_next_c = true;
+                    else if (IsOperator(c) || IsSpecialChar(c))
+                    {
+                        token_val = c;
+                        state = LexState::kFinalizeValue;
+                        should_get_next_c = true;
+                    }
+                    else if (c == ' ' || c == '\n')
+                    {
+                        should_get_next_c = true;
+                    }
+                    else
+                    {
+                        should_abort = true;
+                        err_msg = kStringErrorUndefinedTokenKind;
+                    }
                 }
                 break;
 
@@ -129,6 +204,11 @@ namespace splat
                     {
                         state = LexState::kFinalizeValue;
                     }
+                    else if (c == '\n')
+                    {
+                        should_abort = true;
+                        err_msg = kStringErrorFailedFormingString;
+                    }
                 }
                 break;
 
@@ -137,7 +217,6 @@ namespace splat
                     if (c == '=')
                     {
                         token_val += c;
-                        c = ' ';
                     }
                     state = LexState::kFinalizeValue;
                 }
@@ -166,6 +245,17 @@ namespace splat
         }
 
         return !should_abort;
+    }
+
+    std::string Lexer::ToString()
+    {
+        std::stringstream result_ss;
+        for (Token& token : pimpl_->tokens)
+        {
+            assert(kTokenKindToString.count(token.kind) > 0);
+            result_ss << "{val: \"" << token.value << "\", kind: \"" << kTokenKindToString.at(token.kind) << "\"};\n";
+        }
+        return result_ss.str();
     }
 
     Lexer::~Lexer()

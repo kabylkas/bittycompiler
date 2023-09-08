@@ -5,12 +5,13 @@
 // C++ libraries.
 #include <string>
 
-namespace splat
+namespace bc
 {
     enum class TokenKind
     {
         kUndefined,
-        kLiteral,
+        kStringLiteral,
+        kNumberLiteral,
         kSpecialChar,
         kOperator,
         kStatement,
