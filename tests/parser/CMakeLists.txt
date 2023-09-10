@@ -10,17 +10,17 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/output)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/output)
 
 set(ALL_H
-    ${SRC}/lexer/lexer.h
+    ${SRC}/parser/parser.h
     ${SRC}/common/token.h
 )
 
 set(ALL_CPP
-    ${SRC}/lexer/lexer.cpp
+    ${SRC}/parser/parser.cpp
     ${SRC}/common/token.cpp
 )
 
-add_executable (lexer_test ./main.cpp ${ALL_H} ${ALL_CPP})
-target_include_directories(lexer_test PRIVATE
+add_executable (parser_test ./main.cpp ${ALL_H} ${ALL_CPP})
+target_include_directories(parser_test PRIVATE
     ${SRC}/common
-    ${SRC}/lexer
+    ${SRC}/parser
 )

@@ -10,3 +10,4 @@ set (CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} ${FLAGS})
 
 # Tests.
 add_subdirectory(./tests/lexer)
+add_subdirectory(./tests/parser)

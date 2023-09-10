@@ -21,6 +21,8 @@ namespace bc
 
     struct Token
     {
+        void Tokenize(const std::string& token);
+        std::string ToString();
         std::string value;
         TokenKind kind = TokenKind::kUndefined;
     };
