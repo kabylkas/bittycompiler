@@ -8,11 +8,13 @@
 #include <vector>
 
 // Local libraries.
+#include "ast.h"
 #include "token.h"
 
 namespace bc
 {
     // Constant error messages.
+    static const char* kStringErrorInvalidToken = "Error: Invalid string token provided.";
 
     struct Parser::ParserImpl
     {
@@ -36,30 +38,41 @@ namespace bc
         }
     }
 
-    static void Strip(std::string& str)
+    static bool BuildTree(const std::vector<Token>& tokens, Node& root_node, std::string& err_msg)
     {
-        auto new_end_iter = std::remove_if(str.begin(), str.end(), [&](const char c) {
-            return c == '\n';
-        });
-        str.erase(new_end_iter);
+
     }
 
     bool Parser::ParseString(const std::string& tokens, std::string& err_msg)
     {
+        // Create implementation.
         bool should_abort = false;
         if (pimpl_ == nullptr)
         {
             pimpl_ = new ParserImpl;
         }
 
+        // Tokenize string tokens to IR tokens.
         std::vector<std::string> str_tokens;
-        Split(tokens, ';', str_tokens);
+        Split(tokens, '\n', str_tokens);
 
-        for (std::string& single_str_token : str_tokens)
+        for (uint32_t i = 0; !should_abort && i < str_tokens.size(); i++)
         {
-            Strip(single_str_token);
+            std::string& single_str_token = str_tokens[i];
             pimpl_->tokens.push_back(Token());
             pimpl_->tokens.back().Tokenize(single_str_token);
+            if (pimpl_->tokens.back().kind == TokenKind::kUndefined)
+            {
+                should_abort = true;
+                err_msg = kStringErrorInvalidToken;
+            }
+        }
+
+        // Parse tokens into AST.
+        if (!should_abort)
+        {
+            Node root_node;
+            bool is_built = BuildTree(pimpl_->tokens, root_node, err_msg);
         }
 
         return !should_abort;
