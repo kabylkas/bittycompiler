@@ -3,8 +3,7 @@
 
 // C++ libraries.
 #include <algorithm>
-#include <iostream>
-#include <map>
+#include <memory>
 #include <vector>
 
 // Local libraries.
@@ -13,6 +12,12 @@
 
 namespace bc
 {
+    enum class StatementType
+    {
+        kUndefined,
+        kLabelEqExpression,
+        kSingleExpression
+    };
     // Constant error messages.
     static const char* kStringErrorInvalidToken = "Error: Invalid string token provided.";
 
@@ -38,9 +43,59 @@ namespace bc
         }
     }
 
-    static bool BuildTree(const std::vector<Token>& tokens, Node& root_node, std::string& err_msg)
+    static StatementType DetermineStatementType(const std::vector<std::string>& tokens)
     {
 
+    }
+
+    static std::shared_ptr<Node> BuildStatement(const std::vector<Token>& tokens, std::string& err_msg)
+    {
+
+    }
+
+    static bool BuildTree(const std::vector<Token>& tokens, Node& root_node, std::string& err_msg)
+    {
+        uint32_t i = 1;
+
+        // Find "program" "begin" tokens.
+        bool is_program_begin_found = false;
+        while (i < tokens.size() && !is_program_begin_found)
+        {
+            bool are_both_statements = (tokens[i - 1].kind == TokenKind::kStatement) && (tokens[i].kind == TokenKind::kStatement);
+            is_program_begin_found = (tokens[i].value == "program") && (tokens[i].value == "begin");
+            is_program_begin_found &= are_both_statements;
+            ++i;
+        }
+
+        if (is_program_begin_found)
+        {
+            bool is_end_found = false;
+            bool should_abort = false;
+            while (i < tokens.size() && !is_end_found && !should_abort)
+            {
+                // Form statement.
+                std::vector<Token> statement_tokens;
+                bool is_semicol_found = false;
+                while (i < tokens.size() && !is_semicol_found)
+                {
+                    is_semicol_found = tokens[i].kind == TokenKind::kSpecialChar && tokens[i].value == ";";
+                    if (!is_semicol_found)
+                    {
+                        statement_tokens.push_back(tokens[i]);
+                    }
+                    ++i;
+                }
+
+                // Parse statement.
+                if (is_semicol_found)
+                {
+                    std::shared_ptr<Node> statement_node = std::make_shared<Node>();
+                    statement_node->kind = NodeKind::kStatement;
+                    root_node.subnodes.push_back(statement_node);
+                    statement_node = BuildStatement(statement_tokens, err_msg);
+                }
+            }
+        }
     }
 
     bool Parser::ParseString(const std::string& tokens, std::string& err_msg)
@@ -52,7 +107,7 @@ namespace bc
             pimpl_ = new ParserImpl;
         }
 
-        // Tokenize string tokens to IR tokens.
+        // Tokenize string tokens to tokens in internal representation.
         std::vector<std::string> str_tokens;
         Split(tokens, '\n', str_tokens);
 

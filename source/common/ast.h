@@ -7,7 +7,7 @@ namespace bc
     enum class NodeKind
     {
         kUndefined,
-        kStatement,
+        kProgram,
         kExpression,
         kLabel,
         kStatement
@@ -16,7 +16,7 @@ namespace bc
     struct Node
     {
         NodeKind kind = NodeKind::kUndefined;
-        std::shared_ptr<Node> subnodes;
+        std::vector<std::shared_ptr<Node>> subnodes;
     };
 }
 #endif // AST_H_

@@ -1,2 +1,5 @@
+[9/13/2023]
+- Add labels to lexer.
+
 [9/10/2023]
 - When spliting tokens, the string gets split in ";", we should fix this.
