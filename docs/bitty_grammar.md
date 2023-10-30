@@ -1,6 +1,7 @@
 # Simple grammar of bitty language
 
-program> -> "program" "begin" <statement>* "end"
+```
+<program> -> "program" "begin" <statement>* "end"
 
 <statement> -> <label> = <expression> ";"
                or <expression> ";"
@@ -22,3 +23,4 @@ program> -> "program" "begin" <statement>* "end"
           or "-"
 
 <label> -> // Sequance of alpha-numeric chars not starting with digit
+```
