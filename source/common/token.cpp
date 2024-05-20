@@ -2,6 +2,7 @@
 #include "token.h"
 
 // C++ libraries.
+#include <cassert>
 #include <map>
 #include <vector>
 
@@ -29,11 +30,12 @@ namespace bc
         {"type", TokenKind::kType}
     };
 
-
     void Token::Tokenize(const std::string& token)
     {
-        std::vector<uint32_t> pos;
-        for (uint32_t i = 0; i < token.length(); i++)
+        // Example of a string token: {val: "+", kind: "op"};
+        // Valid token should contain four quotes.
+        std::vector<int32_t> pos;
+        for (int32_t i = 0; i < token.length(); i++)
         {
             if (token[i] == '\"')
             {
@@ -45,12 +47,23 @@ namespace bc
 
         if (is_valid)
         {
-            value = token.substr(pos[0] + 1, pos[1] - pos[0] - 1);
+            assert(pos[1] - pos[0] > 0);
+            value_ = token.substr(pos[0] + 1, pos[1] - pos[0] - 1);
             std::string token_kind_str = token.substr(pos[2] + 1, pos[3] - pos[2] - 1);
             if (kStringToTokenKind.count(token_kind_str) > 0)
             {
-                kind = kStringToTokenKind.at(token_kind_str);
+                kind_ = kStringToTokenKind.at(token_kind_str);
             }
         }
+    }
+
+    Token::Token(const std::string& token)
+    {
+        Tokenize(token);
+    }
+
+    bool Token::IsValid() const
+    {
+        return kind_ != TokenKind::kUndefined;
     }
 }

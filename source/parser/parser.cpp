@@ -26,79 +26,82 @@ namespace bc
         std::vector<Token> tokens;
     };
 
-    static void Split(const std::string& str, char delimeter, std::vector<std::string>& str_vec)
+    namespace aux
     {
-        size_t start = 0;
-        size_t pos = str.find(delimeter);
-
-        if (pos != std::string::npos)
+        static void Split(const std::string& str, char delimeter, std::vector<std::string>& str_vec)
         {
-            std::string substr = str;
-            while (pos != std::string::npos)
+            size_t start = 0;
+            size_t pos = str.find(delimeter);
+
+            if (pos != std::string::npos)
             {
-                str_vec.push_back(substr.substr(0, pos));
-                substr = substr.substr(pos + 1);
-                pos = substr.find(delimeter);
+                std::string substr = str;
+                while (pos != std::string::npos)
+                {
+                    str_vec.push_back(substr.substr(0, pos));
+                    substr = substr.substr(pos + 1);
+                    pos = substr.find(delimeter);
+                }
             }
         }
-    }
 
-    static StatementType DetermineStatementType(const std::vector<std::string>& tokens)
-    {
-
-    }
-
-    static std::shared_ptr<Node> BuildStatement(const std::vector<Token>& tokens, std::string& err_msg)
-    {
-
-    }
-
-    static bool BuildTree(const std::vector<Token>& tokens, Node& root_node, std::string& err_msg)
-    {
-        uint32_t i = 1;
-
-        // Find "program" "begin" tokens.
-        bool is_program_begin_found = false;
-        while (i < tokens.size() && !is_program_begin_found)
+        static StatementType DetermineStatementType(const std::vector<std::string>& tokens)
         {
-            bool are_both_statements = (tokens[i - 1].kind == TokenKind::kStatement) && (tokens[i].kind == TokenKind::kStatement);
-            is_program_begin_found = (tokens[i].value == "program") && (tokens[i].value == "begin");
-            is_program_begin_found &= are_both_statements;
-            ++i;
+
         }
 
-        if (is_program_begin_found)
+        static std::shared_ptr<Node> BuildStatement(const std::vector<Token>& tokens, std::string& err_msg)
         {
-            bool is_end_found = false;
-            bool should_abort = false;
-            while (i < tokens.size() && !is_end_found && !should_abort)
+
+        }
+
+        static bool BuildTree(const std::vector<Token>& tokens, Node& root_node, std::string& err_msg)
+        {
+            uint32_t i = 1;
+
+            // Find "program" "begin" tokens.
+            bool is_program_begin_found = false;
+            while (i < tokens.size() && !is_program_begin_found)
             {
-                // Form statement.
-                std::vector<Token> statement_tokens;
-                bool is_semicol_found = false;
-                while (i < tokens.size() && !is_semicol_found)
+                bool are_both_statements = (tokens[i - 1].kind == TokenKind::kStatement) && (tokens[i].kind == TokenKind::kStatement);
+                is_program_begin_found = (tokens[i].value == "program") && (tokens[i].value == "begin");
+                is_program_begin_found &= are_both_statements;
+                ++i;
+            }
+
+            if (is_program_begin_found)
+            {
+                bool is_end_found = false;
+                bool should_abort = false;
+                while (i < tokens.size() && !is_end_found && !should_abort)
                 {
-                    is_semicol_found = tokens[i].kind == TokenKind::kSpecialChar && tokens[i].value == ";";
-                    if (!is_semicol_found)
+                    // Form statement.
+                    std::vector<Token> statement_tokens;
+                    bool is_semicol_found = false;
+                    while (i < tokens.size() && !is_semicol_found)
                     {
-                        statement_tokens.push_back(tokens[i]);
+                        is_semicol_found = tokens[i].kind == TokenKind::kSpecialChar && tokens[i].value == ";";
+                        if (!is_semicol_found)
+                        {
+                            statement_tokens.push_back(tokens[i]);
+                        }
+                        ++i;
                     }
-                    ++i;
-                }
 
-                // Parse statement.
-                if (is_semicol_found)
-                {
-                    std::shared_ptr<Node> statement_node = std::make_shared<Node>();
-                    statement_node->kind = NodeKind::kStatement;
-                    root_node.subnodes.push_back(statement_node);
-                    statement_node = BuildStatement(statement_tokens, err_msg);
+                    // Parse statement.
+                    if (is_semicol_found)
+                    {
+                        std::shared_ptr<Node> statement_node = std::make_shared<Node>();
+                        statement_node->kind = NodeKind::kStatement;
+                        root_node.subnodes.push_back(statement_node);
+                        statement_node = BuildStatement(statement_tokens, err_msg);
+                    }
                 }
             }
         }
     }
 
-    bool Parser::ParseString(const std::string& tokens, std::string& err_msg)
+    bool Parser::ParseString(const std::string& token_stream, std::string& err_msg)
     {
         // Create implementation.
         bool should_abort = false;
@@ -109,14 +112,14 @@ namespace bc
 
         // Tokenize string tokens to tokens in internal representation.
         std::vector<std::string> str_tokens;
-        Split(tokens, '\n', str_tokens);
+        aux::Split(token_stream, '\n', str_tokens);
 
+        std::vector<Token>& tokens = pimpl_->tokens;
         for (uint32_t i = 0; !should_abort && i < str_tokens.size(); i++)
         {
             std::string& single_str_token = str_tokens[i];
-            pimpl_->tokens.push_back(Token());
-            pimpl_->tokens.back().Tokenize(single_str_token);
-            if (pimpl_->tokens.back().kind == TokenKind::kUndefined)
+            tokens.push_back(Token(single_str_token));
+            if (!tokens.back().IsValid())
             {
                 should_abort = true;
                 err_msg = kStringErrorInvalidToken;
@@ -127,7 +130,7 @@ namespace bc
         if (!should_abort)
         {
             Node root_node;
-            bool is_built = BuildTree(pimpl_->tokens, root_node, err_msg);
+            bool is_built = aux::BuildTree(tokens, root_node, err_msg);
         }
 
         return !should_abort;

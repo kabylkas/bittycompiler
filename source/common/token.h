@@ -19,12 +19,17 @@ namespace bc
         kLabel
     };
 
-    struct Token
+    class Token
     {
+    public:
+        Token(const std::string& token);
         void Tokenize(const std::string& token);
         std::string ToString();
-        std::string value;
-        TokenKind kind = TokenKind::kUndefined;
+        bool IsValid() const;
+
+    private:
+        std::string value_;
+        TokenKind kind_ = TokenKind::kUndefined;
     };
 }
 
