@@ -52,19 +52,20 @@ namespace bc
 
         static std::shared_ptr<Node> BuildStatement(const std::vector<Token>& tokens, std::string& err_msg)
         {
-
+            return nullptr;
         }
 
-        static bool BuildTree(const std::vector<Token>& tokens, Node& root_node, std::string& err_msg)
+        static bool BuildTree(const TokenStream& token_stream, Node& root_node, std::string& err_msg)
         {
+            bool should_abort = false;
             uint32_t i = 1;
 
             // Find "program" "begin" tokens.
             bool is_program_begin_found = false;
-            while (i < tokens.size() && !is_program_begin_found)
+            while (!token_stream.IsStreamEnd() && !is_program_begin_found)
             {
-                bool are_both_statements = (tokens[i - 1].kind == TokenKind::kStatement) && (tokens[i].kind == TokenKind::kStatement);
-                is_program_begin_found = (tokens[i].value == "program") && (tokens[i].value == "begin");
+                bool are_both_statements = (tokens[i - 1].GetKind() == TokenKind::kStatement) && (tokens[i].GetKind() == TokenKind::kStatement);
+                is_program_begin_found = (tokens[i].GetValue() == "program") && (tokens[i].GetValue() == "begin");
                 is_program_begin_found &= are_both_statements;
                 ++i;
             }
@@ -80,7 +81,7 @@ namespace bc
                     bool is_semicol_found = false;
                     while (i < tokens.size() && !is_semicol_found)
                     {
-                        is_semicol_found = tokens[i].kind == TokenKind::kSpecialChar && tokens[i].value == ";";
+                        is_semicol_found = tokens[i].GetKind() == TokenKind::kSpecialChar && tokens[i].GetValue() == ";";
                         if (!is_semicol_found)
                         {
                             statement_tokens.push_back(tokens[i]);
@@ -98,6 +99,7 @@ namespace bc
                     }
                 }
             }
+            return !should_abort;
         }
     }
 
@@ -118,11 +120,14 @@ namespace bc
         for (uint32_t i = 0; !should_abort && i < str_tokens.size(); i++)
         {
             std::string& single_str_token = str_tokens[i];
-            tokens.push_back(Token(single_str_token));
-            if (!tokens.back().IsValid())
+            if (!single_str_token.empty())
             {
-                should_abort = true;
-                err_msg = kStringErrorInvalidToken;
+                tokens.push_back(Token(single_str_token));
+                if (!tokens.back().IsValid())
+                {
+                    should_abort = true;
+                    err_msg = kStringErrorInvalidToken;
+                }
             }
         }
 

@@ -3,11 +3,15 @@
 
 // C++ libraries.
 #include <cassert>
+#include <iostream>
 #include <map>
 #include <vector>
 
 namespace bc
 {
+    // Messages.
+    static const char* kStringWarningOutOfRange = "Warning: Trying to peek out of range token.";
+
     // Constant map for token enum to string conversion.
     static const std::map<TokenKind, const char*> kTokenKindToString = {
         {TokenKind::kLabel, "label"},
@@ -65,5 +69,43 @@ namespace bc
     bool Token::IsValid() const
     {
         return kind_ != TokenKind::kUndefined;
+    }
+
+    std::string Token::GetValue() const
+    {
+        return value_;
+    }
+
+    TokenKind Token::GetKind() const
+    {
+        return kind_;
+    }
+
+    const Token& TokenStream::PeekCurrentPlus(size_t offset) const
+    {
+        if (current_idx_ + offset < tokens_.size())
+        {
+            return tokens_[current_idx_];
+        }
+        else
+        {
+            std::cerr << kStringWarningOutOfRange << std::endl;
+        }
+        return tokens_[0];
+    }
+
+    const Token& TokenStream::Peek() const
+    {
+        return PeekCurrentPlus(0);
+    }
+
+    const Token& TokenStream::PeekNext() const
+    {
+        return PeekCurrentPlus(1);
+    }
+
+    bool TokenStream::IsStreamEnd() const
+    {
+        return current_idx_ >= tokens_.size();
     }
 }

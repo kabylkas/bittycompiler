@@ -227,7 +227,7 @@ namespace bc
                     TokenKind kind = GetTokenKind(token_val);
                     if (kind != TokenKind::kUndefined)
                     {
-                        pimpl_->tokens.push_back({token_val, kind});
+                        pimpl_->tokens.push_back(Token(kind, token_val));
                         state = LexState::kInit;
                     }
                     else
@@ -252,8 +252,8 @@ namespace bc
         std::stringstream result_ss;
         for (Token& token : pimpl_->tokens)
         {
-            assert(kTokenKindToString.count(token.kind) > 0);
-            result_ss << "{val: \"" << token.value << "\", kind: \"" << kTokenKindToString.at(token.kind) << "\"};\n";
+            assert(kTokenKindToString.count(token.GetKind()) > 0);
+            result_ss << "{val: \"" << token.GetValue() << "\", kind: \"" << kTokenKindToString.at(token.GetKind()) << "\"};\n";
         }
         return result_ss.str();
     }
