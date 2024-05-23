@@ -27,7 +27,6 @@ namespace bc
         Token(TokenKind kind, const std::string& value) : kind_(kind), value_(value) {};
 
         void Tokenize(const std::string& token);
-        std::string ToString();
         bool IsValid() const;
         std::string GetValue() const;
         TokenKind GetKind() const;
@@ -35,6 +34,8 @@ namespace bc
     private:
         std::string value_;
         TokenKind kind_ = TokenKind::kUndefined;
+        uint32_t line_ = 0;
+        uint32_t column_ = 0;
     };
 
     class TokenStream
@@ -45,6 +46,9 @@ namespace bc
         const Token& PeekNext() const;
         const Token& PeekCurrentPlus(size_t offset) const;
         bool IsStreamEnd() const;
+
+        // Operator overloads.
+        void operator++();
 
     private:
         const std::vector<Token> tokens_;

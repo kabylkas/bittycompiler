@@ -136,9 +136,12 @@ namespace bc
         bool should_abort = false;
         std::string token_val;
         LexState state = LexState::kInit;
+        uint32_t current_line = 1;
+        uint32_t current_column = 0;
         for (auto c_iter = source.begin(); !should_abort && c_iter != source.end(); c_iter++)
         {
             char c = *c_iter;
+            ++current_column;
 
             bool should_get_next_c = false;
             while (!should_get_next_c && !should_abort)
@@ -171,9 +174,15 @@ namespace bc
                         state = LexState::kFinalizeValue;
                         should_get_next_c = true;
                     }
-                    else if (c == ' ' || c == '\n')
+                    else if (c == ' ')
                     {
                         should_get_next_c = true;
+                    }
+                    else if (c == '\n')
+                    {
+                        should_get_next_c = true;
+                        ++current_line;
+                        current_column = 0;
                     }
                     else
                     {

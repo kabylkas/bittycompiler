@@ -108,4 +108,10 @@ namespace bc
     {
         return current_idx_ >= tokens_.size();
     }
+
+    void TokenStream::operator++()
+    {
+        ++current_idx_;
+    }
+
 }

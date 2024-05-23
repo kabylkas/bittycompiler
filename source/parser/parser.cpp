@@ -55,38 +55,39 @@ namespace bc
             return nullptr;
         }
 
-        static bool BuildTree(const TokenStream& token_stream, Node& root_node, std::string& err_msg)
+        static bool BuildTree(TokenStream& token_stream, Node& root_node, std::string& err_msg)
         {
             bool should_abort = false;
-            uint32_t i = 1;
 
             // Find "program" "begin" tokens.
             bool is_program_begin_found = false;
             while (!token_stream.IsStreamEnd() && !is_program_begin_found)
             {
-                bool are_both_statements = (tokens[i - 1].GetKind() == TokenKind::kStatement) && (tokens[i].GetKind() == TokenKind::kStatement);
-                is_program_begin_found = (tokens[i].GetValue() == "program") && (tokens[i].GetValue() == "begin");
+                bool are_both_statements = (token_stream.Peek().GetKind() == TokenKind::kStatement)
+                    && (token_stream.PeekNext().GetKind() == TokenKind::kStatement);
+                is_program_begin_found = (token_stream.Peek().GetValue() == "program")
+                    && (token_stream.PeekNext().GetValue() == "begin");
                 is_program_begin_found &= are_both_statements;
-                ++i;
+                ++token_stream;
             }
 
             if (is_program_begin_found)
             {
-                bool is_end_found = false;
+                bool is_end_token_found = false;
                 bool should_abort = false;
-                while (i < tokens.size() && !is_end_found && !should_abort)
+                while (!token_stream.IsStreamEnd() && !is_end_token_found && !should_abort)
                 {
                     // Form statement.
                     std::vector<Token> statement_tokens;
                     bool is_semicol_found = false;
-                    while (i < tokens.size() && !is_semicol_found)
+                    while (!token_stream.IsStreamEnd() && !is_semicol_found)
                     {
-                        is_semicol_found = tokens[i].GetKind() == TokenKind::kSpecialChar && tokens[i].GetValue() == ";";
+                        is_semicol_found = token_stream.Peek().GetKind() == TokenKind::kSpecialChar
+                            && token_stream.Peek().GetValue() == ";";
                         if (!is_semicol_found)
                         {
-                            statement_tokens.push_back(tokens[i]);
+                            statement_tokens.push_back(token_stream.Peek());
                         }
-                        ++i;
                     }
 
                     // Parse statement.
@@ -135,7 +136,7 @@ namespace bc
         if (!should_abort)
         {
             Node root_node;
-            bool is_built = aux::BuildTree(tokens, root_node, err_msg);
+            bool is_built = aux::BuildTree(TokenStream(tokens), root_node, err_msg);
         }
 
         return !should_abort;
